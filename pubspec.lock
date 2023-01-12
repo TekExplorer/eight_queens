@@ -277,13 +277,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.1"
-  local_hero:
-    dependency: "direct main"
-    description:
-      path: "../local_hero"
-      relative: true
-    source: path
-    version: "0.2.0"
   logging:
     dependency: transitive
     description:

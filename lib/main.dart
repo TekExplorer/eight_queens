@@ -2,7 +2,6 @@ import 'package:eight_queens/widgets/game_board_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:local_hero/local_hero.dart';
 
 import 'game/game_board.dart';
 import 'game/queen.dart';
@@ -177,14 +176,10 @@ class _HomeWidgetState extends State<HomeWidget> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Flexible(
-                  child: LocalHeroScope(
-                    // duration: const Duration(milliseconds: 50),
-                    // curve: Curves.bounceInOut,
-                    child: PageStorage(
-                      bucket: PageStorageBucket(),
-                      child: GameBoardWidget(
-                        gameBoard: visibleGameBoard,
-                      ),
+                  child: PageStorage(
+                    bucket: PageStorageBucket(),
+                    child: GameBoardWidget(
+                      gameBoard: visibleGameBoard,
                     ),
                   ),
                 ),
