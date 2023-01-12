@@ -10,6 +10,8 @@ jobs:
     name: Publish to Pages
     steps:
       - uses: actions/checkout@v3 # Only works with v2
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
 #         name: Checkout
       - uses: subosito/flutter-action@v1
         name: Flutter Action
