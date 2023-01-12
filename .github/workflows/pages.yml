@@ -18,3 +18,5 @@ jobs:
         name: Flutter Action
       - uses: bluefireteam/flutter-gh-pages@v7
         name: Flutter Web Build and Publish
+        with:
+          baseHref: /eight_queens/
