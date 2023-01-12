@@ -89,7 +89,7 @@ class _HomeWidgetState extends State<HomeWidget> {
         if (mounted) {
           var messenger = ScaffoldMessenger.of(context);
           messenger.showSnackBar(const SnackBar(
-            content: Text("HAHA! We've Won!"),
+            content: Text("HAHA! We've Won! Success!"),
             backgroundColor: Colors.greenAccent,
           ));
         }
@@ -102,7 +102,7 @@ class _HomeWidgetState extends State<HomeWidget> {
         if (mounted) {
           var messenger = ScaffoldMessenger.of(context);
           messenger.showSnackBar(const SnackBar(
-            content: Text('Better neighbor state found!'),
+            content: Text('Better neighbor state found! Keep going!'),
             backgroundColor: Colors.yellowAccent,
           ));
         }
@@ -113,7 +113,7 @@ class _HomeWidgetState extends State<HomeWidget> {
         if (mounted) {
           var messenger = ScaffoldMessenger.of(context);
           messenger.showSnackBar(const SnackBar(
-            content: Text("On no! We've hit a peak!"),
+            content: Text("On no! We've hit a peak! You have to restart..."),
             backgroundColor: Colors.redAccent,
           ));
         }
@@ -164,7 +164,12 @@ class _HomeWidgetState extends State<HomeWidget> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(10.0),
+          padding: const EdgeInsets.only(
+            top: 10.0,
+            left: 10,
+            right: 10,
+            bottom: 50,
+          ),
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -233,6 +238,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                     Expanded(
                       child: FloatingActionButton(
                         onPressed: () {
+                          ScaffoldMessenger.of(context).clearSnackBars();
                           generateNeighborStates();
                           // generateNeighborStatesForOneQueen(
                           //   visibleGameBoard.queenAtColumn1,
