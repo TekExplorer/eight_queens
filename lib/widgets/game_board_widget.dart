@@ -2,9 +2,7 @@
 import 'dart:math';
 
 import 'package:eight_queens/game/game_board.dart';
-import 'package:eight_queens/game/queen.dart';
 import 'package:flutter/material.dart';
-import 'package:local_hero/local_hero.dart';
 
 class GameBoardWidget extends StatelessWidget {
   const GameBoardWidget({super.key, required this.gameBoard});
@@ -41,15 +39,9 @@ class GameBoardWidget extends StatelessWidget {
                             );
                             Widget? child;
                             if (isQueen) {
-                              var queen = gameBoard.queens.firstWhere(
-                                (q) => q.column == column,
-                              );
-                              child = LocalHero(
-                                key: PageStorageKey<Queen>(queen),
-                                tag: 'Queen at ${queen.column}',
-                                child: const QueenWidget(),
-                              );
-                              // TODO: annoying assertion
+                              // var queen = gameBoard.queens.firstWhere(
+                              //   (q) => q.column == column,
+                              // );
                               child = const QueenWidget();
                             }
                             return GameCell(
