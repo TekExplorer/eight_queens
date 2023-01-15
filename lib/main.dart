@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'game/game_board.dart';
 import 'game/queen.dart';
+import 'widgets/cell.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -222,11 +223,11 @@ class _HomeWidgetState extends State<HomeWidget> {
                                 });
                               },
                         icon: const QueenWidget(
-                          child: Icon(
-                            Icons.refresh,
-                            color: Colors.transparent,
-                          ),
-                        ),
+                            // child: Icon(
+                            //   Icons.refresh,
+                            //   color: Colors.transparent,
+                            // ),
+                            ),
                         label: const Text('Refresh'),
                       ),
                     ),
