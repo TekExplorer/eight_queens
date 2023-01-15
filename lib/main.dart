@@ -55,6 +55,7 @@ class _HomeWidgetState extends State<HomeWidget> {
   }
 
   bool? generatorCanceled;
+  int restartCount = 0;
 
   void generateNeighborStates() async {
     if (generatorCanceled != null) return;
@@ -73,8 +74,8 @@ class _HomeWidgetState extends State<HomeWidget> {
     }
     visibleGameBoard = currentGameBoard;
     generatorCanceled = null;
-    setState(() {});
 
+    setState(() {});
     afterCompletion();
   }
 
@@ -88,8 +89,9 @@ class _HomeWidgetState extends State<HomeWidget> {
       SchedulerBinding.instance.addPostFrameCallback((duration) {
         if (mounted) {
           var messenger = ScaffoldMessenger.of(context);
+          messenger.clearSnackBars();
           messenger.showSnackBar(const SnackBar(
-            content: Text("HAHA! We've Won! Success!"),
+            content: Text("We've Won! Success!🎉🎉🎉"),
             backgroundColor: Colors.greenAccent,
           ));
         }
@@ -101,10 +103,12 @@ class _HomeWidgetState extends State<HomeWidget> {
       SchedulerBinding.instance.addPostFrameCallback((duration) {
         if (mounted) {
           var messenger = ScaffoldMessenger.of(context);
+          messenger.clearSnackBars();
           messenger.showSnackBar(const SnackBar(
-            content: Text('Better neighbor state found! Keep going!'),
+            content: Text('Better neighbor state found! Continuing!'),
             backgroundColor: Colors.yellowAccent,
           ));
+          generateNeighborStates();
         }
       });
       setState(() {});
@@ -112,10 +116,16 @@ class _HomeWidgetState extends State<HomeWidget> {
       SchedulerBinding.instance.addPostFrameCallback((duration) {
         if (mounted) {
           var messenger = ScaffoldMessenger.of(context);
+          messenger.clearSnackBars();
           messenger.showSnackBar(const SnackBar(
-            content: Text("On no! We've hit a peak! You have to restart..."),
+            content: Text("On no! We've hit a peak! Restarting..."),
             backgroundColor: Colors.redAccent,
           ));
+          // restart
+          currentGameBoard = GameBoard.random();
+          restartCount++;
+          visibleGameBoard = currentGameBoard;
+          generateNeighborStates();
         }
       });
     }
@@ -149,6 +159,13 @@ class _HomeWidgetState extends State<HomeWidget> {
     // debugPrint('Local Queen x2: $queen');
     if (mounted) setState(() {});
     await Future.delayed(duration);
+    if (queen.row == 7 || queen.row == 8 || queen.row == 0) {
+      await Future.delayed(duration * .25);
+    }
+    if (queen.row == 8 || queen.row == 0) {
+      await Future.delayed(duration * .25);
+    }
+
     if (mounted) setState(() {});
   }
 
@@ -181,6 +198,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                     bucket: PageStorageBucket(),
                     child: GameBoardWidget(
                       gameBoard: visibleGameBoard,
+                      ghostBoard: currentGameBoard,
                     ),
                   ),
                 ),
@@ -206,6 +224,10 @@ class _HomeWidgetState extends State<HomeWidget> {
                   Text(
                       'Best (Count): ${bestNeighborState!.heuristicValue} (${betterNeighborStates.length})'),
                 ],
+                ...[
+                  const SizedBox(height: 8),
+                  Text('Restart Count: $restartCount'),
+                ],
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -220,6 +242,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                                 setState(() {
                                   neighborStates.clear();
                                   visibleGameBoard.randomize();
+                                  restartCount = 0;
                                 });
                               },
                         icon: const QueenWidget(
@@ -234,33 +257,26 @@ class _HomeWidgetState extends State<HomeWidget> {
                     Expanded(
                       child: FloatingActionButton(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).clearSnackBars();
-                          generateNeighborStates();
+                          if (generatorCanceled == null) {
+                            ScaffoldMessenger.of(context).clearSnackBars();
+                            generateNeighborStates();
+                          } else {
+                            generatorCanceled = true;
+                            setState(() {});
+                          }
                           // generateNeighborStatesForOneQueen(
                           //   visibleGameBoard.queenAtColumn1,
                           // );
                         },
-                        child: const Icon(Icons.play_arrow),
+                        child: generatorCanceled == null
+                            ? const Icon(Icons.play_arrow)
+                            : const Icon(Icons.stop),
                       ),
                     ),
-                    if (generatorCanceled != null)
-                      Flexible(
-                        fit: FlexFit.tight,
-                        child: ElevatedButton(
-                          onPressed: generatorCanceled == true
-                              ? null
-                              : () {
-                                  generatorCanceled = true;
-                                  setState(() {});
-                                },
-                          child: const Text('Cancel'),
-                        ),
-                      )
-                    else
-                      const Flexible(
-                        fit: FlexFit.tight,
-                        child: SizedBox(),
-                      ),
+                    const Flexible(
+                      fit: FlexFit.tight,
+                      child: SizedBox(),
+                    ),
                     const Spacer(),
                   ],
                 ),

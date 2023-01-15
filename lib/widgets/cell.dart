@@ -9,9 +9,9 @@ class GameCell extends StatelessWidget {
     this.builder,
   });
 
-  final int row;
+  final int? row;
   final int column;
-  final Widget Function(BuildContext context, bool isWhiteSquare)? builder;
+  final Widget Function(BuildContext context, bool? isWhiteSquare)? builder;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -22,8 +22,15 @@ class GameCell extends StatelessWidget {
     );
   }
 
-  bool get isWhiteSquare => (row + column) % 2 == 0;
-  Color getColor() => isWhiteSquare ? Colors.white : Colors.lightBlue;
+  bool? get isWhiteSquare {
+    if (row == null) return null;
+    return (row! + column) % 2 == 0;
+  }
+
+  Color getColor() {
+    if (isWhiteSquare == null) return Colors.transparent;
+    return isWhiteSquare! ? Colors.white : Colors.lightBlue;
+  }
 }
 
 class QueenWidget extends StatelessWidget {

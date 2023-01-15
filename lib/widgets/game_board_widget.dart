@@ -7,8 +7,13 @@ import 'package:flutter/material.dart';
 import 'game_column.dart';
 
 class GameBoardWidget extends StatelessWidget {
-  const GameBoardWidget({super.key, required this.gameBoard});
+  const GameBoardWidget({
+    super.key,
+    required this.gameBoard,
+    this.ghostBoard,
+  });
   final GameBoard gameBoard;
+  final GameBoard? ghostBoard;
 
   @override
   Widget build(BuildContext context) {
@@ -23,12 +28,14 @@ class GameBoardWidget extends StatelessWidget {
             width: minDimension * 8,
             height: minDimension * 8,
           ),
-          // child: _Possibility1(minDimension: minDimension, gameBoard: gameBoard),
           child: Row(
             children: List.generate(8, (index) {
               final column = index + 1;
               return Expanded(
                 child: GameColumnWidget(
+                  ghostQueenRow: ghostBoard?.queens
+                      .firstWhere((q) => q.column == column)
+                      .row,
                   rowWithQueen: gameBoard.queens
                       .firstWhere((q) => q.column == column)
                       .row,
