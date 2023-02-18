@@ -1,199 +1,203 @@
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
+import 'package:eight_queens/providers/animation_speed.dart';
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-import 'cell.dart';
+import '../providers/position.dart';
+import 'tile.dart';
 
-class GameColumnWidget extends StatelessWidget {
-  const GameColumnWidget({
-    super.key,
-    required this.rowWithQueen,
-    required this.column,
-    this.ghostQueenRow,
-  });
-  final int rowWithQueen;
-  final int column;
-  final int? ghostQueenRow;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedGameColumnWidget(
-      queenRow: rowWithQueen,
-      column: column,
-      ghostQueenRow: ghostQueenRow,
-    );
-    return BaseGameColumn(column: column);
-  }
-}
-
-class BaseGameColumn extends StatelessWidget {
-  const BaseGameColumn({
+class GameColumn extends ConsumerWidget {
+  const GameColumn({
     super.key,
     required this.column,
+    required this.queen,
+    required this.ghost,
   });
 
-  final int column;
+  final Position column;
+  final Position queen;
+  final Position? ghost;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (var row = 8; row >= 1; row--)
-          Expanded(
-            child: GameCell(
-              column: column,
-              row: row,
-              builder: (ctx, isWhiteSquare) => const SizedBox.expand(),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double tileSize = constraints.maxWidth;
+        return Stack(
+          children: [
+            Column(
+              children: [
+                for (final Position row in Position.values)
+                  SizedBox.square(
+                    dimension: tileSize,
+                    child: Tile(
+                      column: column,
+                      row: row,
+                    ),
+                  ),
+              ],
             ),
-          ),
-      ],
+            AnimatedPositioned(
+              duration: ref.watch(animationDurationProvider),
+              top: queen.index * tileSize,
+              child: SizedBox.square(
+                dimension: tileSize,
+                child: BlackQueen(),
+              ),
+            ),
+            if (ghost != null && ghost != queen)
+              AnimatedPositioned(
+                duration: ref.watch(animationDurationProvider),
+                top: ghost!.index * tileSize,
+                child: SizedBox.square(
+                  dimension: tileSize,
+                  child: const WalkerBlackQueen(),
+                ),
+              ),
+            if (ghost != null && ghost != queen)
+              // an arrow pointing from the queen to the ghost
+              Positioned(
+                height: tileSize * (ghost!.index - queen.index).abs(),
+                width: tileSize,
+                top: ghost!.index > queen.index
+                    ? (queen.index * tileSize + tileSize / 2)
+                    : (ghost!.index * tileSize + tileSize / 2),
+                left: tileSize / 2,
+                child: SizedBox.square(
+                  dimension: tileSize,
+                  child: Arrow(
+                    length: (ghost!.index - queen.index).abs(),
+                    cellSize: tileSize,
+                    fillColor: Colors.green.withOpacity(.5),
+                    direction: ghost!.index > queen.index
+                        ? ArrowDirection.down
+                        : ArrowDirection.up,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
 
-// animate the above widget. slide to new position
-class AnimatedGameColumnWidget extends StatefulWidget {
-  const AnimatedGameColumnWidget({
+class Arrow extends StatelessWidget {
+  const Arrow({
     super.key,
-    required this.queenRow,
-    this.ghostQueenRow,
-    required this.column,
+    required this.length,
+    required this.cellSize,
+    required this.direction,
+    this.fillColor = Colors.black,
   });
-  final int? ghostQueenRow;
-  final int queenRow;
-  final int column;
-
-  @override
-  _AnimatedGameColumnWidgetState createState() =>
-      _AnimatedGameColumnWidgetState();
-}
-
-// should animate the queen sliding to the new position
-class _AnimatedGameColumnWidgetState extends State<AnimatedGameColumnWidget>
-    with SingleTickerProviderStateMixin {
-  int get currentQueenRow => widget.queenRow;
-  late int previousQueenRow;
-  late AnimationController controller;
-  late Animation<double> animation;
-  bool get didQueenMove => previousQueenRow != currentQueenRow;
-  bool get isQueenMovingUp => previousQueenRow > currentQueenRow;
-  bool get isQueenMovingDown => previousQueenRow < currentQueenRow;
-
-  late GlobalKey queenKey = GlobalKey();
-
-  @override
-  void initState() {
-    super.initState();
-    previousQueenRow = widget.queenRow;
-    controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-    animation = Tween<double>(begin: 0, end: 1).animate(controller);
-  }
-
-  bool get queenWrappedBoard =>
-      (previousQueenRow == 1 && currentQueenRow == 8) ||
-      (previousQueenRow == 8 && currentQueenRow == 1);
-
-  @override
-  void didUpdateWidget(covariant AnimatedGameColumnWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.queenRow != widget.queenRow) {
-      previousQueenRow = oldWidget.queenRow;
-      if (queenWrappedBoard) {
-        controller.reset();
-        queenKey = GlobalKey();
-      } else if (isQueenMovingUp) {
-        controller.reverse();
-      } else if (isQueenMovingDown) {
-        controller.forward();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
+  final double cellSize;
+  final int length;
+  final ArrowDirection direction;
+  final Color fillColor;
 
   @override
   Widget build(BuildContext context) {
-    Curve curve = Curves.fastLinearToSlowEaseIn;
-    if (queenWrappedBoard) {
-      // curve = const TeleportCurve();
+    return CustomPaint(
+      painter: ArrowPainter(
+        length: length,
+        cellSize: cellSize,
+        direction: direction,
+        fillColor: fillColor,
+      ),
+    );
+  }
+}
+
+class ArrowPainter extends CustomPainter {
+  const ArrowPainter({
+    required this.length,
+    required this.cellSize,
+    required this.direction,
+    this.fillColor = Colors.black,
+  });
+  final double cellSize;
+  // number of cells it goes over
+  final int length;
+  final ArrowDirection direction;
+  final Color fillColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = fillColor
+      ..style = PaintingStyle.fill;
+
+    final Path path = Path();
+
+    final double arrowWidth = cellSize / 2;
+    final double arrowHeight = cellSize / 2;
+
+    // draw a dot in the center
+    // path.addOval(
+    //   Rect.fromCenter(
+    //     center: Offset(0, size.height / 2),
+    //     width: cellSize / 4,
+    //     height: cellSize / 4,
+    //   ),
+    // );
+
+    final middle = Offset(0, size.height / 2);
+
+    // move there first
+    path.moveTo(0, size.height / 2);
+    // draw the line with
+    path.addRect(
+      Rect.fromCenter(
+        center: middle,
+        height: (cellSize * (length - 1)),
+        width: cellSize / 4,
+      ),
+    );
+    // now the arrow based on direction
+
+    switch (direction) {
+      case ArrowDirection.up:
+        path.moveTo(0, size.height);
+        path.lineTo(-arrowWidth / 2, size.height - arrowHeight);
+        path.lineTo(arrowWidth / 2, size.height - arrowHeight);
+        path.lineTo(0, size.height);
+        break;
+      case ArrowDirection.down:
+        path.moveTo(0, 0);
+        path.lineTo(-arrowWidth / 2, arrowHeight);
+        path.lineTo(arrowWidth / 2, arrowHeight);
+        path.lineTo(0, 0);
+        break;
     }
-    return AnimatedBuilder(
-      animation: animation,
-      child: SizedBox.expand(
-        child: BaseGameColumn(
-          column: widget.column,
-        ),
-      ),
-      builder: (ctx, child) => LayoutBuilder(
-        builder: (context, constraints) {
-          return Stack(
-            fit: StackFit.passthrough,
-            children: [
-              child!,
-              // if (didQueenMove)
-              AnimatedPositioned(
-                key: queenKey,
-                curve: curve,
-                duration: controller.duration!,
-                top: calculateTop(constraints),
-                child: getCell(constraints),
-              ),
-              // if (widget.ghostQueenRow != null &&
-              //     widget.ghostQueenRow != currentQueenRow)
-              Positioned(
-                top: calculateTop(
-                  constraints,
-                  row: widget.ghostQueenRow,
-                ),
-                child: getCell(constraints, opacity: .5, sizeMultiplier: 1.2),
-              ),
-            ],
-          );
-        },
-      ),
+
+    final Path shiftedPath;
+    switch (direction) {
+      case ArrowDirection.up:
+        shiftedPath = path.shift(Offset(0, -cellSize / 4));
+        break;
+      case ArrowDirection.down:
+        shiftedPath = path.shift(Offset(0, cellSize / 4));
+        break;
+    }
+
+    canvas.drawPath(shiftedPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+enum ArrowDirection { up, down }
+
+class WalkerBlackQueen extends StatelessWidget {
+  const WalkerBlackQueen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlackQueen(
+      fillColor: Theme.of(context).colorScheme.onPrimary,
+      decorationColor: Theme.of(context).colorScheme.onSecondary,
+      strokeColor: Theme.of(context).colorScheme.onSecondary,
     );
-  }
-
-  SizedBox getCell(BoxConstraints constraints,
-      {double? opacity, double? sizeMultiplier}) {
-    return SizedBox.fromSize(
-      size: Size.square(constraints.maxHeight / 8),
-      child: SizedBox.expand(
-        child: GameCell(
-          column: widget.column,
-          row: null,
-          builder: (ctx, isWhiteSquare) {
-            return Opacity(
-              opacity: opacity ?? 1,
-              child: BlackQueen(
-                size: calculateIconSize(constraints) * (sizeMultiplier ?? 1),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  double calculateTop(BoxConstraints constraints, {int? row}) {
-    row ??= currentQueenRow;
-    final cellHeight = constraints.maxHeight / 8;
-    final queenHeight = cellHeight;
-    final queenTop = (row - 1) * cellHeight;
-    final queenBottom = queenTop + queenHeight;
-    final top = queenBottom - queenHeight;
-    return top;
-  }
-
-  double calculateIconSize(BoxConstraints constraints) {
-    final cellHeight = constraints.maxHeight / 8;
-    final queenHeight = cellHeight;
-    return queenHeight;
   }
 }
